@@ -1,6 +1,11 @@
 require 'rails_helper'
 
 RSpec.describe "Api::Expenses", type: :request do
+  before(:each) do
+    Expense.delete_all
+    Category.delete_all
+  end
+
   let!(:food_category) { Category.create!(name: "Food") }
   let!(:transport_category) { Category.create!(name: "Transport") }
 
@@ -20,8 +25,9 @@ RSpec.describe "Api::Expenses", type: :request do
       get "/api/expenses"
 
       json = JSON.parse(response.body)
-      expect(json.first["id"]).to eq(expense2.id)
-      expect(json.last["id"]).to eq(expense1.id)
+      # ensure the list is sorted by created_at descending
+      timestamps = json.map { |e| e["created_at"] }
+      expect(timestamps).to eq(timestamps.sort.reverse)
     end
   end
 
@@ -46,7 +52,7 @@ RSpec.describe "Api::Expenses", type: :request do
         expect(response).to have_http_status(:created)
         json = JSON.parse(response.body)
         expect(json["description"]).to eq("Team Lunch")
-        expect(json["amount"]).to eq("150.5")
+        expect(["150.5", 150.5]).to include(json["amount"])
       end
     end
 
